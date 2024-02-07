@@ -40,8 +40,8 @@ phases:
       - echo Writing image definitions file...
       - printf '[\n  {\n    "name":"%s",\n    "imageUri":"%s"\n  }\n]\n' "$CONTAINER_NAME" "$REPOSITORY_URI:latest" > imagedefinitions.json
       - echo Uploading OWASP ZAP report to an S3 bucket...
-      - if [ -f zap_report.html ]; then aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html; else echo "No ZAP report found, skipping upload"; fi
-      - aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
+      #- if [ -f zap_report.html ]; then aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html; else echo "No ZAP report found, skipping upload"; fi
+      #- aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
 
 artifacts:
   files:
