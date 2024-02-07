@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing Snyk...
+      - npm install -g snyk
+      - pip install awscli
+      - echo Installing OWASP ZAP...
+      - docker pull owasp/zap2docker-stable # or use another tag/version as needed
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - echo Scanning for secrets...
+      - git-secrets --scan
+      - echo Checking for vulnerabilities in the dependencies...
+      - snyk auth $SNYK_TOKEN
+      - snyk test
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push $IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Running OWASP ZAP...
+      - docker run --rm owasp/zap2docker-stable zap-baseline.py -t http://your-staging-env-url/ -r zap_report.html
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $IMAGE_REPO_NAME:$IMAGE_TAG > imagedefinitions.json
+      - echo Uploading OWASP ZAP report to an S3 bucket...
+      - aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
+
+artifacts:
+  files:
+    - imagedefinitions.json
