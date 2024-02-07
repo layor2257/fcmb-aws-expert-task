@@ -5,18 +5,19 @@ phases:
     commands:
       - echo Installing Snyk...
       - npm install -g snyk
-      - pip install awscli
+      - pip install --upgrade awscli
+      - aws --version
       - echo Installing OWASP ZAP...
       - docker pull owasp/zap2docker-stable # or use another tag/version as needed
   pre_build:
     commands:
-      - echo Logging in to Amazon EKS...
-      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $AWS_CLUSTER_NAME
-      - aws eks --region us-east-1 update-kubeconfig --name fcmb-cluster
-      - kubectl config current-context # Verify the current context is correctly set
-      - echo check config 
-      - kubectl config view --minify
-      - echo check kubectl access
+      #- echo Logging in to Amazon EKS...
+      #- aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $AWS_CLUSTER_NAME
+      #- aws eks --region us-east-1 update-kubeconfig --name fcmb-cluster
+      #- kubectl config current-context # Verify the current context is correctly set
+      #- echo check config 
+      #- kubectl config view --minify
+      #- echo check kubectl access
       #- kubectl get svc
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
