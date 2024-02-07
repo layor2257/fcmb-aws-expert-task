@@ -13,7 +13,7 @@ spec:
         app: fcmb-app
     spec:
       containers:
-      - name: fcmb-app-container
+      - name: fcmb-test-repo
         image: 091986632336.dkr.ecr.us-east-1.amazonaws.com/fcmb-test-repo:latest
         ports:
         - containerPort: 3000

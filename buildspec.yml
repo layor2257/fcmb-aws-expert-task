@@ -10,6 +10,12 @@ phases:
       - docker pull owasp/zap2docker-stable # or use another tag/version as needed
   pre_build:
     commands:
+      - echo Logging in to Amazon EKS...
+      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $AWS_CLUSTER_NAME
+      - echo check config 
+      - kubectl config view --minify
+      - echo check kubectl access
+      - kubectl get svc
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -45,6 +51,13 @@ phases:
       #- aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
       - echo Uploading Snyk report to an S3 bucket...
       - aws s3 cp snyk_report.json s3://my-security-reports/snyk-findings/snyk_report_v1.2.3.json
+      - echo Push the latest image to cluster
+      - kubectl apply -f deployment.yaml
+      - kubectl rollout restart -f deployment.yaml
+      - kubectl apply -f service.yaml
+      - kubectl get svc my-app-service
+
+
 
 artifacts:
   files:
