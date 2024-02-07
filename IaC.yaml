@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Cloudformation script
+Parameters:
+  repoName:
+    Description: The name of the ECR repository to create.
+    Type: String
+    Default: fcmb-test
+Resources:
+  ecrRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${repoName}-repo'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+  ClusterSharedNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Communication between all nodes in the cluster
+      VpcId: !Ref VPC
+  ControlPlane:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: fcmb-cluster
+      Version: '1.27'
+      RoleArn: !GetAtt ServiceRole.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ControlPlaneSecurityGroup
+        SubnetIds:
+          - !Ref SubnetPublicUSEAST1C
+          - !Ref SubnetPublicUSEAST1F
+          - !Ref SubnetPrivateUSEAST1C
+          - !Ref SubnetPrivateUSEAST1F
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Communication between the control plane and worker nodegroups
+      VpcId: !Ref VPC
+  
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        
+  ManagedNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: fcmb-cluster
+      NodeRole: !GetAtt NodeInstanceRole.Arn
+      AmiType: AL2_x86_64
+      InstanceTypes:
+        - t2.medium
+      ScalingConfig:
+        DesiredSize: 3
+        MinSize: 1
+        MaxSize: 4
+      Subnets:
+        - !Ref SubnetPrivateUSEAST1C
+        - !Ref SubnetPrivateUSEAST1F
+  NodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+Outputs:
+  ECRRepositoryURI:
+    Description: The URI of the ECR Repository
+    Value: !GetAtt ecrRepo.RepositoryUri
+  EKSClusterARN:
+    Description: The ARN of the EKS Cluster
+    Value: !GetAtt ControlPlane.Arn
+  NodeGroupARN:
+    Description: The ARN of the EKS Managed Node Group
+    Value: !GetAtt ManagedNodeGroup.Arn
