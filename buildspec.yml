@@ -11,26 +11,33 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 091986632336.dkr.ecr.us-east-1.amazonaws.com)
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=$BRANCH}
       - echo $IMAGE_TAG
+      - IMAGE_NAME="fcmb-test-repo"
+      - CONTAINER_NAME=$IMAGE_NAME
       - REPOSITORY_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME"
       - echo Checking for vulnerabilities in the dependencies...
       - snyk auth $SNYK_TOKEN
       - snyk test
   build:
     commands:
+      - echo Build started on $(date)
       - echo Building the Docker image...
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker build -t $IMAGE_NAME:latest .
+      - docker tag $IMAGE_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
+      - docker tag $IMAGE_NAME:latest $REPOSITORY_URI:latest
   post_build:
     commands:
+      - echo Build completed on $(date)
       - echo Pushing the Docker image...
-      - docker push $IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - docker push $REPOSITORY_URI:latest
       - echo Running OWASP ZAP...
       - docker run --rm owasp/zap2docker-stable zap-baseline.py -t http://your-staging-env-url/ -r zap_report.html
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $IMAGE_REPO_NAME:$IMAGE_TAG > imagedefinitions.json
+      - printf '[\n  {\n    "name":"%s",\n    "imageUri":"%s"\n  }\n]\n' "$CONTAINER_NAME" "$REPOSITORY_URI:latest" > imagedefinitions.json
       - echo Uploading OWASP ZAP report to an S3 bucket...
       - aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
 
