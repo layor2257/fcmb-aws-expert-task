@@ -21,6 +21,7 @@ phases:
       - echo Checking for vulnerabilities in the dependencies...
       - snyk auth $SNYK_TOKEN
       - snyk test
+      - snyk test --json > snyk_report.json
   build:
     commands:
       - echo Build started on $(date)
@@ -42,6 +43,8 @@ phases:
       - echo Uploading OWASP ZAP report to an S3 bucket...
       #- if [ -f zap_report.html ]; then aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html; else echo "No ZAP report found, skipping upload"; fi
       #- aws s3 cp zap_report.html s3://owasp-report-bucket/zap_report_$IMAGE_TAG.html
+      - echo Uploading Snyk report to an S3 bucket...
+      - aws s3 cp snyk_report.json s3://my-security-reports/snyk-findings/snyk_report_v1.2.3.json
 
 artifacts:
   files:
