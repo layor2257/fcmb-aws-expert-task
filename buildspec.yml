@@ -17,7 +17,7 @@ phases:
       - echo check config 
       - kubectl config view --minify
       - echo check kubectl access
-      - kubectl get svc
+      #- kubectl get svc
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -57,7 +57,7 @@ phases:
       - kubectl apply -f deployment.yaml
       - kubectl rollout restart -f deployment.yaml
       - kubectl apply -f service.yaml
-      - kubectl get svc my-app-service
+      #- kubectl get svc my-app-service
 
 
 
