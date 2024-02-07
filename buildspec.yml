@@ -12,6 +12,8 @@ phases:
     commands:
       - echo Logging in to Amazon EKS...
       - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $AWS_CLUSTER_NAME
+      - aws eks --region us-east-1 update-kubeconfig --name fcmb-cluster
+      - kubectl config current-context # Verify the current context is correctly set
       - echo check config 
       - kubectl config view --minify
       - echo check kubectl access
